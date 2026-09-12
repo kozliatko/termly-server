@@ -129,7 +129,7 @@ Three HTTP endpoints and one WebSocket path, all derived from the CLI source:
 - `POST /api/pairing`, `POST /api/pairing/batch` — register a pairing code
 - `ws://…/ws/agent?code=<CODE>` (first connect) or `?sessionId=<uuid>` (reconnect)
 
-Both the CLI and the mobile app use the same `/ws/agent` path. The server tells
+Both the CLI and the web client use the same `/ws/agent` path. The server tells
 them apart by connection order — the CLI mints the code, so it always arrives
 first — and corrects itself if a peer sends a message only the other side
 produces.
@@ -137,11 +137,9 @@ produces.
 ## Web client
 
 The relay serves a browser terminal at `/`. Open it on the phone, type the
-six-character pairing code, and the session runs in the browser.
-
-This exists because the official mobile app dials its own backend regardless of
-the `serverUrl` in the pairing QR, so it never reaches a self-hosted relay. The
-web client speaks exactly the same protocol the app is supposed to speak.
+six-character pairing code, and the session runs in the browser — this is the
+only client this relay ships with, and the only one verified to work against a
+self-hosted deployment.
 
 | File | Role |
 | --- | --- |

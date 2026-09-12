@@ -152,18 +152,13 @@ The original defaulted to 3001; the CLI's `local` environment is hardcoded to
   code, so the phone would dial its own localhost. The CLI branch
   `feature/self-hosted-server-url` adds a `TERMLY_SERVER_URL` override; see the
   README.
-- **The mobile side of the protocol is inferred**, from PR #49's
-  reverse-engineering plus the CLI's own handlers. `mobile_pairing` and
-  `pairing_ack` are verified against `mock-mobile.js`, not against the official
-  iOS app.
 
 ## Web client and PWA
 
-The official mobile app dials its own backend regardless of the `serverUrl` in
-the pairing QR, so a self-hosted relay is never reached — verified by a Caddy
-access log that recorded zero requests from the phone. The browser client under
-`public/` speaks the protocol the app is supposed to speak, which makes the
-relay usable on its own.
+The browser client under `public/` is the supported way to pair with a
+self-hosted relay, and the only one verified end-to-end: `mock-mobile.js`
+exercises the wire protocol, and `test-browser.mjs` runs the shipped page
+itself in a real browser engine.
 
 ### 17. Finite-field DH in the browser
 

@@ -5,7 +5,7 @@
  * Derived from PR #49 (termly-dev/termly-cli) by B-A-M-N, with protocol and
  * robustness fixes verified against the CLI source (v1.9.5).
  *
- * The server never sees plaintext or key material: the CLI and the mobile app
+ * The server never sees plaintext or key material: the CLI and the web client
  * perform a Diffie-Hellman exchange through it and encrypt everything with a
  * key this process never derives. Its whole job is to pair two sockets and
  * forward JSON between them.
@@ -529,9 +529,8 @@ function registerPairing(req, res, batch) {
 app.post('/api/pairing', (req, res) => registerPairing(req, res, false));
 app.post('/api/pairing/batch', (req, res) => registerPairing(req, res, true));
 
-// The web client. The official mobile app dials its own hardcoded backend and
-// never reaches a self-hosted relay, so the relay ships a client of its own.
-// Mounted after the API routes, so a file can never shadow an endpoint.
+// The web client — the only client this relay ships with. Mounted after the
+// API routes, so a file can never shadow an endpoint.
 // public/package.json only marks the directory as ESM for Node's loader; it is
 // not part of the client and has no business being served.
 app.use('/package.json', (req, res) => res.status(404).json({ error: 'not_found' }));

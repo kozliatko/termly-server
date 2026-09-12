@@ -1,9 +1,9 @@
 /**
  * Termly web client - the pairing handshake and relay protocol, without any UI.
  *
- * Mirrors what the official mobile app is supposed to do: connect to
- * /ws/agent?code=..., complete the modp14 exchange, then relay encrypted input
- * and decrypt output. The UI layer subscribes through the `on` callbacks.
+ * Connects to /ws/agent?code=..., completes the modp14 exchange, then relays
+ * encrypted input and decrypts output. The UI layer subscribes through the
+ * `on` callbacks.
  */
 
 import {
