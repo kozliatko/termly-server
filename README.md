@@ -1,5 +1,10 @@
 # termly-local-server
 
+[![License: MIT](https://img.shields.io/github/license/kozliatko/termly-server)](LICENSE)
+[![Node.js >=22](https://img.shields.io/badge/node-%3E%3D22-339933?logo=node.js&logoColor=white)](package.json)
+[![PWA installable](https://img.shields.io/badge/PWA-installable-5A0FC8?logo=pwa&logoColor=white)](#installing-it-as-an-app)
+[![Last commit](https://img.shields.io/github/last-commit/kozliatko/termly-server)](https://github.com/kozliatko/termly-server/commits/main)
+
 A self-hosted relay for the [Termly CLI](https://github.com/termly-dev/termly-cli).
 It pairs your CLI with a phone and forwards messages between them, and it
 serves its own web client at `/` so no app install is required.
