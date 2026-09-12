@@ -565,6 +565,44 @@ app.get('/api/dashboard/sessions', (req, res) => {
   res.json({ sessions, count: sessions.length });
 });
 
+/*
+ * Ends a session the operator wants gone right now, rather than waiting out
+ * its idle timeout. Addressed by the same truncated id the live list already
+ * shows - the full sessionId is a reconnect credential (see the sessionId=
+ * path above) and has no reason to ever reach this page, even one behind
+ * basic_auth.
+ *
+ * Basic_auth is ambient: a browser resends cached credentials to this origin
+ * regardless of which page asked it to, so a plain state-changing POST would
+ * be forgeable from any page the operator's browser happens to load. Requiring
+ * this header defeats both a bare HTML form (which cannot set a custom
+ * header) and a cross-origin fetch (which would need a CORS preflight this
+ * origin never allows).
+ */
+app.post('/api/dashboard/sessions/:shortId/kill', (req, res) => {
+  if (req.get('X-Termly-Dashboard') !== '1') {
+    return res.status(400).json({ error: 'bad_request', message: 'Missing X-Termly-Dashboard header' });
+  }
+
+  const matches = [...new Set(sessionsById.values())]
+    .filter(s => short(s.sessionId) === req.params.shortId);
+
+  if (matches.length === 0) {
+    return res.status(404).json({ error: 'session_not_found' });
+  }
+  if (matches.length > 1) {
+    // Astronomically unlikely with an 8-character prefix, but refusing to
+    // guess which one is what "kill the right session" actually requires.
+    return res.status(409).json({ error: 'ambiguous_session_id' });
+  }
+
+  const [session] = matches;
+  closeWithReason(session.cliWs, 'session_expired', 'Session ended from the dashboard');
+  closeWithReason(session.mobileWs, 'session_expired', 'Session ended from the dashboard');
+  session.destroy('killed by operator');
+  res.json({ success: true });
+});
+
 app.get('/api/dashboard/stats', (req, res) => {
   res.json(history.stats());
 });

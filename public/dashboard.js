@@ -37,9 +37,36 @@ function renderSessions({ sessions }) {
       <td>${escapeHtml(s.aiTool || 'unknown')}</td>
       <td>${escapeHtml(s.projectName || '—')}</td>
       <td>${s.cols && s.rows ? `${s.cols}×${s.rows}` : '—'}</td>
+      <td><button type="button" class="kill" data-id="${s.sessionId}">Kill</button></td>
     </tr>
   `).join('');
 }
+
+async function killSession(shortId, button) {
+  if (!confirm(`End session ${shortId}? Both sides get disconnected immediately.`)) return;
+  button.disabled = true;
+  button.textContent = '…';
+  try {
+    const res = await fetch(`/api/dashboard/sessions/${encodeURIComponent(shortId)}/kill`, {
+      method: 'POST',
+      headers: { 'X-Termly-Dashboard': '1' }
+    });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new Error(body.error || `HTTP ${res.status}`);
+    }
+    await tick();
+  } catch (err) {
+    showError(`Could not end session ${shortId}: ${err.message}`);
+    button.disabled = false;
+    button.textContent = 'Kill';
+  }
+}
+
+$('#live-table').addEventListener('click', e => {
+  const button = e.target.closest('button.kill');
+  if (button) killSession(button.dataset.id, button);
+});
 
 function escapeHtml(str) {
   return String(str).replace(/[&<>"']/g, c => ({

@@ -49,6 +49,13 @@ td.mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
 .dot.on { background: var(--ok); }
 .dot.off { background: var(--border); }
 
+button.kill {
+  background: transparent; color: var(--err); border: 1px solid var(--err);
+  border-radius: 4px; padding: 3px 8px; font-size: 12px; cursor: pointer;
+}
+button.kill:hover { background: var(--err); color: #fff; }
+button.kill:disabled { opacity: .5; cursor: default; }
+
 .stat-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));

@@ -129,6 +129,18 @@ per day over the last 14 days, pairing success rate, average time to pair,
 average session duration, and a breakdown by AI tool. It polls
 `/api/dashboard/sessions` and `/api/dashboard/stats` every 5 seconds.
 
+Each open session has a Kill button that ends it immediately — both sides are
+disconnected with the same `session_expired` reason the CLI already knows how
+to handle, rather than waiting out the idle timeout. It is addressed by the
+same truncated id the list already shows; the full sessionId never reaches
+this page, since it doubles as a reconnect credential. The request also has to
+carry a custom header (`X-Termly-Dashboard: 1`), which a plain HTML form
+cannot set and a cross-origin script cannot add without a CORS preflight this
+origin never allows — otherwise the ambient nature of `basic_auth` (the
+browser resends cached credentials to this origin regardless of which page
+asked it to) would make this one action forgeable from any page the operator's
+browser happens to have open.
+
 This is operator-facing, not visitor-facing, so it is not gated by the app
 itself — `docker-compose.yml` scopes Caddy `basic_auth` to `/dashboard*` and
 `/api/dashboard*` with a named path matcher, and refuses to start unless

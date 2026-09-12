@@ -89,7 +89,9 @@ function connect(query) {
   return new Promise(resolve => {
     const ws = new WebSocket(`ws://127.0.0.1:${PORT}/ws/agent?${query}`);
     ws.received = [];
+    ws.closeInfo = null;
     ws.on('message', raw => { try { ws.received.push(JSON.parse(raw.toString())); } catch {} });
+    ws.on('close', (code, reason) => { ws.closeInfo = { code, reason: reason.toString() }; });
     ws.once('open', () => resolve(ws));
     ws.once('close', () => resolve(ws));
   });
@@ -97,6 +99,8 @@ function connect(query) {
 
 const dashSessions = () => fetch(`${base}/api/dashboard/sessions`).then(r => r.json());
 const dashStats = () => fetch(`${base}/api/dashboard/stats`).then(r => r.json());
+const kill = (shortId, headers = { 'X-Termly-Dashboard': '1' }) =>
+  fetch(`${base}/api/dashboard/sessions/${shortId}/kill`, { method: 'POST', headers });
 
 // ---- the live view reflects an open session --------------------------------
 
@@ -122,13 +126,33 @@ sessions = await dashSessions();
 mine = sessions.sessions.find(s => s.projectName === 'proj-one');
 check('pairing is reflected live', mine && mine.paired === true && mine.peerConnected === true);
 
-phone.close();
-cli.close();
-await sleep(SESSION_TTL + 400);
+// ---- killing a session from the dashboard -----------------------------------
+
+const stats0 = await dashStats();
+const noHeader = await kill(mine.sessionId, {});
+check('a kill request with no header is refused', noHeader.status === 400);
+sessions = await dashSessions();
+check('and the session is untouched', sessions.sessions.some(s => s.projectName === 'proj-one'));
+
+const unknown = await kill('deadbeef');
+check('killing an id nobody registered is a 404, not a silent no-op', unknown.status === 404);
+
+const killed = await kill(mine.sessionId);
+check('a proper kill request succeeds', killed.status === 200);
+await sleep(150);
+
+check('the CLI socket is closed with the reason the client already understands',
+  cli.closeInfo !== null && /session_expired/.test(cli.closeInfo.reason));
+check('so is the paired phone', phone.closeInfo !== null && /session_expired/.test(phone.closeInfo.reason));
 
 sessions = await dashSessions();
-check('a reaped session disappears from the live list',
+check('and the session is gone from the live list immediately, not after a reap delay',
   !sessions.sessions.some(s => s.projectName === 'proj-one'));
+
+const statsAfterKill = await dashStats();
+check('the kill is recorded in history as a closed, successfully-paired session',
+  stats0.pairSuccessRate === null && statsAfterKill.pairSuccessRate === 1,
+  `${stats0.pairSuccessRate} -> ${statsAfterKill.pairSuccessRate}`);
 
 // ---- history accumulates across the three lifecycle transitions ------------
 

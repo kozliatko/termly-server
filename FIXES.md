@@ -742,3 +742,25 @@ project and inspecting the container's actual applied labels - `config`'s
 display escapes `$` for its own re-parseability either way, so the only way to
 tell a resolved value from an unresolved one was to check what Docker actually
 attached to the container.
+
+## 48. Killing a session from the dashboard, without opening a CSRF hole
+
+The dashboard needed a way to end an open session on demand rather than
+waiting out its idle timeout. The obvious shape - a POST the page's own script
+sends - is exactly the pattern that is forgeable when the only thing guarding
+it is HTTP Basic auth: a browser resends cached credentials to an origin
+regardless of which page told it to, unlike a cookie that at least has
+`SameSite` to lean on. Any page the operator's browser had open could have
+fired the same POST.
+
+Two things close that off without adding a token-issuing scheme the dashboard
+would then have to protect its own storage of: the request must carry a custom
+`X-Termly-Dashboard` header, which a plain HTML form cannot attach at all, and
+a cross-origin script cannot attach either without a CORS preflight this
+origin never answers yes to. Between the two, nothing that isn't this page's
+own `fetch` call can reach the endpoint.
+
+The endpoint is addressed by the same truncated id the live list already
+shows rather than the full sessionId, for the same reason the list itself was
+truncated when it was first built: a full sessionId is a reconnect credential,
+and this page has no reason to ever hold one, gated or not.
