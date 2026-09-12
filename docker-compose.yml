@@ -1,0 +1,41 @@
+services:
+  server:
+    build: .
+    restart: unless-stopped
+    networks:
+      - default
+      - caddy
+    environment:
+      # Must be 0.0.0.0 inside the container, otherwise the proxy upstream fails.
+      TERMLY_BIND: 0.0.0.0
+      TERMLY_LOCAL_PORT: 3000
+
+      # Caddy terminates the client connection, so every socket arrives from the
+      # proxy. Without this the per-IP limits would collapse into one bucket and
+      # X-Forwarded-For is what identifies the real client.
+      TERMLY_TRUST_PROXY: 1
+
+      TERMLY_LOG_LEVEL: ${TERMLY_LOG_LEVEL:-info}
+      TERMLY_HEARTBEAT_MS: ${TERMLY_HEARTBEAT_MS:-5000}
+      TERMLY_PAIRING_TTL_MS: ${TERMLY_PAIRING_TTL_MS:-300000}
+      TERMLY_SESSION_TTL_MS: ${TERMLY_SESSION_TTL_MS:-300000}
+
+      # Empty by default: the page this relay serves is allowed on its own, and
+      # the CLI sends no Origin. Only a web client hosted elsewhere needs this.
+      TERMLY_ALLOWED_ORIGINS: ${TERMLY_ALLOWED_ORIGINS:-}
+    labels:
+      caddy: termly.kozliatko.sk
+      caddy.reverse_proxy: "{{upstreams 3000}}"
+
+      # Terminal sessions stay open for hours with no traffic between pings.
+      caddy.reverse_proxy.transport: http
+      caddy.reverse_proxy.transport.read_timeout: 3600s
+
+      # Access log at the proxy, so a request that never reaches the app is
+      # still visible.
+      caddy.log.format: json
+      caddy.log.output: stderr
+
+networks:
+  caddy:
+    external: true

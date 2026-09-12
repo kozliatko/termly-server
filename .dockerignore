@@ -1,0 +1,10 @@
+node_modules
+npm-debug.log
+*.log
+.env
+.git
+.gitignore
+mock-mobile.js
+README.md
+FIXES.md
+test

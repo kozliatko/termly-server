@@ -1,0 +1,32 @@
+{
+  "name": "termly-local-server",
+  "version": "1.0.0",
+  "description": "Self-hosted zero-knowledge relay for the Termly CLI",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "start:lan": "TERMLY_BIND=0.0.0.0 node server.js",
+    "start:debug": "TERMLY_LOG_LEVEL=debug node server.js",
+    "vendor": "cp node_modules/@xterm/xterm/lib/xterm.js node_modules/@xterm/xterm/css/xterm.css node_modules/@xterm/addon-fit/lib/addon-fit.js node_modules/@xterm/addon-web-links/lib/addon-web-links.js public/vendor/",
+    "test": "node test/run-all.mjs"
+  },
+  "license": "MIT",
+  "type": "commonjs",
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "express": "^5.2.1",
+    "ws": "^8.21.0"
+  },
+  "optionalDependencies": {
+    "bufferutil": "^4.0.9",
+    "utf-8-validate": "^6.0.5"
+  },
+  "devDependencies": {
+    "@xterm/addon-fit": "^0.10.0",
+    "@xterm/addon-web-links": "^0.12.0",
+    "@xterm/xterm": "^5.5.0",
+    "jsdom": "^30.0.1"
+  }
+}

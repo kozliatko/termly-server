@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<!-- viewport-fit=cover so the terminal reaches under the notch; the safe-area
+     insets below put the key bar back where a thumb can reach it. Zooming is
+     deliberately left alone: nothing here is small enough to make iOS zoom on
+     focus, and someone who needs a closer look at 13px terminal output should
+     be able to pinch for one. The layout measures itself in a way that ignores
+     the zoom - see viewportHeight() in app.js. -->
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0d1117">
+<meta name="color-scheme" content="dark">
+<meta name="description" content="Browser terminal for a self-hosted Termly relay.">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Termly">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Termly</title>
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="stylesheet" href="/vendor/xterm.css">
+<link rel="stylesheet" href="/app.css">
+</head>
+<body>
+<div id="app">
+  <section id="pairing">
+    <img id="logo" src="/icons/icon.svg" alt="">
+    <h1>Termly</h1>
+
+    <div id="resume">
+      <p>A session from this device is still open.</p>
+      <button class="btn" id="resumeBtn">Resume session</button>
+      <button class="btn secondary" id="forgetBtn">Forget it</button>
+    </div>
+
+    <p id="prompt">Enter the pairing code shown by <code>termly start</code>.</p>
+    <input id="code" maxlength="6" autocomplete="off" autocapitalize="characters"
+           autocorrect="off" spellcheck="false" inputmode="text" placeholder="ABC123"
+           aria-label="Pairing code">
+    <button class="btn" id="connect" disabled>Connect</button>
+    <button class="btn secondary" id="scan" hidden>Scan QR code</button>
+    <button class="btn secondary" id="install" hidden>Add to home screen</button>
+    <video id="scanner" playsinline muted></video>
+    <div id="pairError" role="alert"></div>
+    <p class="hint" id="hint"></p>
+  </section>
+
+  <section id="session">
+    <div id="bar">
+      <span id="dot" aria-hidden="true"></span>
+      <span id="status" role="status">connecting</span>
+      <span id="fp" aria-label="Session key fingerprint"></span>
+      <button class="icon-btn" id="menuBtn" aria-label="Session options"
+              aria-haspopup="menu" aria-expanded="false" aria-controls="menu">•••</button>
+    </div>
+    <div id="termWrap">
+      <div id="term"></div>
+      <button id="toBottom" hidden>Jump to latest ↓</button>
+      <div id="banner" role="status" hidden><span id="bannerText"></span><button
+        id="bannerAction" type="button" hidden></button></div>
+    </div>
+    <div id="keys"></div>
+  </section>
+
+  <div id="menu" role="menu" aria-label="Session options">
+    <button role="menuitem" id="fontDown">Smaller text <span class="val" id="fontVal">13px</span></button>
+    <button role="menuitem" id="fontUp">Larger text</button>
+    <button role="menuitem" id="sizeToggle">Terminal size <span class="val" id="sizeVal">from CLI</span></button>
+    <div class="sep" role="separator"></div>
+    <button role="menuitem" id="wakeToggle">Keep screen awake <span class="val" id="wakeVal">off</span></button>
+    <button role="menuitem" id="copyBtn">Copy selection</button>
+    <button role="menuitem" id="clearBtn">Clear screen</button>
+    <div class="sep" role="separator"></div>
+    <button role="menuitem" id="quit" class="danger">End session</button>
+  </div>
+</div>
+
+<script src="/vendor/xterm.js"></script>
+<script src="/vendor/addon-fit.js"></script>
+<script src="/vendor/addon-web-links.js"></script>
+<script type="module" src="/app.js"></script>
+</body>
+</html>
