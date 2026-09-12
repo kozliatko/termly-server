@@ -142,8 +142,8 @@ The original defaulted to 3001; the CLI's `local` environment is hardcoded to
 
 ## Known limitations
 
-- **No TLS.** iOS App Transport Security may refuse cleartext `ws://`; a LAN
-  deployment wants a `wss://` proxy in front.
+- **No TLS.** A page served over `https://` cannot open a cleartext `ws://`
+  connection (mixed content); a LAN deployment wants a `wss://` proxy in front.
 - **No authentication** beyond the pairing code.
 - **`lastMobileSeq` is advisory.** It records what the mobile asked to resume
   from; the CLI owns the real buffer and decides what to replay.

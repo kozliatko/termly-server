@@ -105,8 +105,9 @@ raw connection volume. That leaves brute force impractical, but it is not
 authentication, and a public deployment is still a terminal behind a short
 secret. Prefer a private network or a VPN if that trade is not acceptable.
 
-The relay has no TLS of its own; behind Caddy it does not need any, and iOS App
-Transport Security will refuse a cleartext `ws://` connection anyway.
+The relay has no TLS of its own; behind Caddy it does not need any, and a page
+loaded over `https://` will refuse to open a cleartext `ws://` connection
+anyway (mixed content).
 
 Every response carries a strict CSP - no `unsafe-inline`, no third-party origin,
 `object-src`/`base-uri`/`form-action` at `'none'`, framing denied - plus
