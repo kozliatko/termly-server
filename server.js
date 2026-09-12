@@ -17,6 +17,7 @@ const http = require('http');
 const path = require('path');
 const os = require('os');
 const { randomUUID } = require('node:crypto');
+const history = require('./history');
 
 // ---------------------------------------------------------------------------
 // Configuration
@@ -187,6 +188,7 @@ class Session {
     this.cliPublicKey = fields.publicKey;
     this.mobilePublicKey = null;
     this.paired = false;
+    this.pairedAt = null;
 
     this.cliWs = null;
     this.mobileWs = null;
@@ -204,6 +206,13 @@ class Session {
   }
 
   destroy(reason) {
+    history.record('closed', {
+      sessionId: this.sessionId,
+      paired: this.paired,
+      durationMs: Date.now() - this.createdAt,
+      reason
+    });
+
     clearInterval(this.heartbeatTimer);
     clearTimeout(this.reapTimer);
     clearTimeout(this.pairingTimer);
@@ -518,6 +527,7 @@ function registerPairing(req, res, batch) {
   }, PAIRING_TTL);
 
   logger.info('pairing', `Registered code=${code} session=${short(session.sessionId)} tool=${session.aiTool} project=${session.projectName || '.'}`);
+  history.record('created', { sessionId: session.sessionId, aiTool: session.aiTool });
 
   res.json({
     success: true,
@@ -528,6 +538,40 @@ function registerPairing(req, res, batch) {
 
 app.post('/api/pairing', (req, res) => registerPairing(req, res, false));
 app.post('/api/pairing/batch', (req, res) => registerPairing(req, res, true));
+
+/*
+ * Metadata for the operator's own dashboard - never terminal content, which
+ * this process cannot see anyway. Nothing here is a secret on the wire the way
+ * a pairing code is, but the whole point of a dashboard is to show who is
+ * using the relay, so it is not meant for the same audience as `/`. Gate
+ * `/dashboard*` and `/api/dashboard*` at the proxy; the app does not
+ * duplicate that check.
+ */
+app.get('/api/dashboard/sessions', (req, res) => {
+  const sessions = [...new Set(sessionsById.values())].map(s => ({
+    sessionId: short(s.sessionId),
+    createdAt: s.createdAt,
+    ageMs: Date.now() - s.createdAt,
+    paired: s.paired,
+    cliConnected: !!(s.cliWs && s.cliWs.readyState === WebSocket.OPEN),
+    peerConnected: !!(s.mobileWs && s.mobileWs.readyState === WebSocket.OPEN),
+    aiTool: s.aiTool,
+    aiToolVersion: s.aiToolVersion,
+    projectName: s.projectName,
+    computerName: s.computerName,
+    cols: s.cols,
+    rows: s.rows
+  }));
+  res.json({ sessions, count: sessions.length });
+});
+
+app.get('/api/dashboard/stats', (req, res) => {
+  res.json(history.stats());
+});
+
+app.get('/dashboard', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
+});
 
 // The web client — the only client this relay ships with. Mounted after the
 // API routes, so a file can never shadow an endpoint.
@@ -802,6 +846,7 @@ function handleMessage(session, ws, msg) {
 
       session.mobilePublicKey = msg.publicKey;
       session.paired = true;
+      session.pairedAt = Date.now();
 
       // The code has done its job; leaving it live would let a second peer
       // claim the same session.
@@ -810,6 +855,10 @@ function handleMessage(session, ws, msg) {
       sessionsByCode.delete(session.code);
 
       logger.info('pairing', `Mobile paired with session ${short(session.sessionId)}`);
+      history.record('paired', {
+        sessionId: session.sessionId,
+        msToPair: session.pairedAt - session.createdAt
+      });
 
       // The CLI reads `publicKey` here (handlePairingComplete -> onPaired);
       // any other field name leaves it without an AES key.

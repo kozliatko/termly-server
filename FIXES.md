@@ -712,3 +712,33 @@ Vyluka je prec, a vysla z nej dvojica skutocnych chybajucich poloziek:
 `/vendor/addon-web-links.js` (novy addon) a `/icons/apple-touch-icon.png`. Obe su
 teraz v `SHELL`.
 
+
+## 47. A dashboard whose Caddy label would have shipped broken
+
+Adding an operator dashboard meant gating `/dashboard*` and `/api/dashboard*`
+with Caddy `basic_auth`, configured entirely through Compose labels so a
+misconfigured or absent proxy fails closed rather than serving it wide open.
+The first draft read the username from an env var in the label's *key*:
+`caddy.basic_auth.${TERMLY_DASHBOARD_USER:-admin}`.
+
+`docker compose config` showed why that was wrong before it ever reached
+production: Compose interpolates `${...}` in a label's *value*, never in its
+*key*. The rendered label kept the literal, un-substituted text as its key,
+which caddy-docker-proxy would have read as a username containing a `$` and a
+brace - never matching the credentials anyone actually typed. The username
+isn't secret, so it is now hardcoded (`caddy.basic_auth.admin`) and only the
+password hash - which does need to stay out of git - is read from `.env`.
+
+A second, unrelated interpolation problem showed up in the same label: a
+bcrypt hash is full of `$`-delimited fields (`$2a$14$...`), and Compose's own
+`.env` file parser interpolates those before the value ever reaches the
+compose file - one run failed outright with "the variable `Ux` is not set"
+because `$Ux` inside the hash looked like a reference. `.env.example` now says
+to double every `$` to `$$` when pasting a hash in.
+
+Both were caught by literally reading `docker compose config`'s output and, for
+the key-interpolation question, standing up a disposable one-service compose
+project and inspecting the container's actual applied labels - `config`'s
+display escapes `$` for its own re-parseability either way, so the only way to
+tell a resolved value from an unresolved one was to check what Docker actually
+attached to the container.

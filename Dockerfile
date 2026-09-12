@@ -19,11 +19,16 @@ ENV TERMLY_LOCAL_PORT=3000
 WORKDIR /app
 
 COPY --from=deps /app/node_modules ./node_modules
-COPY package.json server.js ./
+COPY package.json server.js history.js ./
 
 # The web client is served straight from disk; xterm is vendored into
 # public/vendor, so no build step and no extra runtime dependency.
 COPY public ./public
+
+# The dashboard's event log lives here, on a volume the compose file mounts -
+# owned by "node" up front, since it is created before that user can chown
+# anything itself.
+RUN mkdir -p /app/data && chown node:node /app/data
 
 # node:alpine ships an unprivileged "node" user; a relay that spawns nothing
 # has no reason to run as root.

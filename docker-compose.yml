@@ -23,6 +23,10 @@ services:
       # Empty by default: the page this relay serves is allowed on its own, and
       # the CLI sends no Origin. Only a web client hosted elsewhere needs this.
       TERMLY_ALLOWED_ORIGINS: ${TERMLY_ALLOWED_ORIGINS:-}
+    volumes:
+      # The dashboard's event log - just enough to survive a redeploy. The
+      # relay itself is stateless otherwise; nothing else needs this volume.
+      - server_data:/app/data
     labels:
       caddy: termly.kozliatko.sk
       caddy.reverse_proxy: "{{upstreams 3000}}"
@@ -36,6 +40,21 @@ services:
       caddy.log.format: json
       caddy.log.output: stderr
 
+      # The dashboard shows who is using the relay, which is not for the same
+      # audience as the pairing page - gated here rather than in the app, so a
+      # misconfigured or absent proxy fails closed instead of wide open.
+      # Generate the hash with: docker exec caddy caddy hash-password
+      #
+      # The username is fixed here rather than read from .env: Compose only
+      # interpolates ${...} in a label's value, never in its key, so a
+      # variable there would have shipped as a literal, useless label.
+      caddy.@dashboard.path: /dashboard* /api/dashboard*
+      caddy.basic_auth: "@dashboard"
+      caddy.basic_auth.admin: ${TERMLY_DASHBOARD_HASH:?set TERMLY_DASHBOARD_HASH in .env}
+
 networks:
   caddy:
     external: true
+
+volumes:
+  server_data:

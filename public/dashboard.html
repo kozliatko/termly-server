@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Termly relay dashboard</title>
+<link rel="stylesheet" href="/dashboard.css">
+</head>
+<body>
+<header>
+  <h1>Relay dashboard</h1>
+  <p class="hint">
+    Session metadata only — the relay is zero-knowledge and cannot see
+    terminal content. Refreshes every 5s.
+  </p>
+</header>
+
+<main>
+  <section aria-labelledby="live-h">
+    <h2 id="live-h">Open sessions <span id="live-count" class="count"></span></h2>
+    <div id="live-empty" class="empty" hidden>No open sessions.</div>
+    <div class="table-wrap">
+      <table id="live-table" hidden>
+        <thead>
+          <tr>
+            <th>Session</th>
+            <th>Age</th>
+            <th>CLI</th>
+            <th>Peer</th>
+            <th>Paired</th>
+            <th>Tool</th>
+            <th>Project</th>
+            <th>Size</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section aria-labelledby="stats-h">
+    <h2 id="stats-h">History</h2>
+    <div class="stat-grid" id="stat-grid"></div>
+
+    <h3>Sessions per day, last 14 days</h3>
+    <div id="bars" class="bars"></div>
+
+    <h3>By AI tool</h3>
+    <ul id="by-tool" class="by-tool"></ul>
+  </section>
+</main>
+
+<p id="error" class="error" role="alert" hidden></p>
+
+<script src="/dashboard.js"></script>
+</body>
+</html>

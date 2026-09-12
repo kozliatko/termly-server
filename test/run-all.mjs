@@ -64,7 +64,7 @@ async function run(script, needsCode) {
   if (needsCode) {
     session = await startCli(serverUrl);
     args.push(session.code, relayHost);
-  } else if (!needsCode && !['test-interop.mjs', 'test-shell.mjs', 'test-ui.mjs', 'test-sw.mjs', 'test-lifecycle.mjs', 'test-backpressure.mjs'].includes(script)) {
+  } else if (!needsCode && !['test-interop.mjs', 'test-shell.mjs', 'test-ui.mjs', 'test-sw.mjs', 'test-lifecycle.mjs', 'test-backpressure.mjs', 'test-history.mjs', 'test-dashboard.mjs'].includes(script)) {
     args.push(relayHost);
   }
 
@@ -83,6 +83,8 @@ results.push(await run('test-ui.mjs', false));
 results.push(await run('test-sw.mjs', false));
 results.push(await run('test-lifecycle.mjs', false));
 results.push(await run('test-backpressure.mjs', false));
+results.push(await run('test-history.mjs', false));
+results.push(await run('test-dashboard.mjs', false));
 results.push(await run('test-webclient.mjs', true));
 results.push(await run('test-browser.mjs', true));
 results.push(await run('test-resume.mjs', true));

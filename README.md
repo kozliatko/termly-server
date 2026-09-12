@@ -63,6 +63,8 @@ running the relay directly on a public port — a client could then forge
 | `TERMLY_ALLOWED_ORIGINS` | unset | Extra origins allowed to open a WebSocket, comma-separated; the page this relay serves is always allowed and the CLI sends no `Origin` at all |
 | `TERMLY_MAX_BUFFERED_BYTES` | `4194304` | Backlog a peer may carry before it is watched for a stall; eight times this is dropped on sight |
 | `TERMLY_MAX_BUFFERED_MS` | `10000` | How long a backlog over that cap may persist before the peer is dropped to resync |
+| `TERMLY_DATA_DIR` | `./data` | Where the dashboard's history log (`events.jsonl`) is written |
+| `TERMLY_HISTORY_MAX_EVENTS` | `20000` | The history log is trimmed back toward this many lines once comfortably past it |
 
 ## Pointing the CLI at it
 
@@ -118,6 +120,38 @@ not extend to WebSockets before 15.4. HSTS is sent only when the proxy reports
 the request arrived over HTTPS. This matters more than it would for a static
 page: the web client stores a Diffie-Hellman private exponent in `localStorage`,
 so script injection on this origin would disclose a session key.
+
+## Dashboard
+
+`/dashboard` shows who is currently using the relay — open sessions with their
+age, pairing state, AI tool and project name — plus historical stats: sessions
+per day over the last 14 days, pairing success rate, average time to pair,
+average session duration, and a breakdown by AI tool. It polls
+`/api/dashboard/sessions` and `/api/dashboard/stats` every 5 seconds.
+
+This is operator-facing, not visitor-facing, so it is not gated by the app
+itself — `docker-compose.yml` scopes Caddy `basic_auth` to `/dashboard*` and
+`/api/dashboard*` with a named path matcher, and refuses to start unless
+`TERMLY_DASHBOARD_HASH` is set in `.env`:
+
+```bash
+docker exec caddy caddy hash-password --plaintext '<a password>'
+```
+
+Paste the result into `.env` as `TERMLY_DASHBOARD_HASH`, doubling every `$` to
+`$$` — Compose's own `.env` parser otherwise tries to interpolate the hash's
+`$`-delimited fields as variables. The username is fixed to `admin` in
+`docker-compose.yml`: Compose only interpolates a label's *value*, never its
+*key*, so a variable there would ship as a literal, useless label.
+
+The live session list reads the in-memory session registry directly and holds
+nothing once a session closes. The historical stats come from a small
+dependency-free JSONL log (`history.js`) that only ever records a session's
+id, timestamps, AI tool, whether it paired, and its duration — never its
+project name, working directory, or computer name, since a publicly-reachable
+relay can have strangers pointing a CLI at it and those fields can identify
+their machine. That log is written to `TERMLY_DATA_DIR` (`/app/data` in the
+container, backed by the `server_data` volume) so it survives a redeploy.
 
 ## Protocol
 
